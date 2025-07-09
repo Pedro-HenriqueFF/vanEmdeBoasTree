@@ -1,10 +1,6 @@
-//Árvore VanEmdeBoas
-
-//Inclusão
-//Remoção
 //Sucessor
 //Predecessor
-//Imprimir
+
 #include <iostream>
 #include <optional>
 #include <iomanip>
@@ -14,6 +10,7 @@
 #include <ctime>
 #include <fstream> 
 #include <string>
+#include <vector>
 using namespace std;
 
 #define U 16
@@ -34,7 +31,9 @@ class VEBTree {
         void Remover(int x);
         void Predecessor(int x);
         void Sucessor(int x);
-        void Imprimir(const string &prefix);
+        void Imprimir();
+        void print(const string &prefix);
+        vector<int> getCluster();
 
         VEBTree(int u) {
             this->min = None;
@@ -156,16 +155,52 @@ void VEBTree::Remover(int x) {
     cout << "passo 14, valor " << x << ", Universo " << this->universe_size << endl;
 }
 
-void VEBTree::Imprimir(const string &prefix) {
+void VEBTree::Imprimir() {
+    cout << "Min: " << this->min;
+    for (int i = 0; i < this->number_clusters; i++) {
+        if (this->clusters[i]) {
+            cout << ", C[" << i << "]:";
+            vector<int> elements = this->clusters[i]->getCluster();
+            for (int j = 0; j < elements.size(); j++) {
+                if (j != 0) cout << ", " << elements[j];
+                else cout << " " << elements[j];
+            }
+        }
+    }
+    cout << endl;
+}
+
+vector<int> VEBTree::getCluster() {
+    vector<int> elements;
+    elements.push_back(this->min);
+    if (this->universe_size <= 2) {
+        if (this->min != this->max) elements.push_back(this->max);
+        return elements;
+    } 
+    int x;
+    int w_ = this->w >> 1;  
+    for (int c = 0; c < this->number_clusters; c++) {
+        if (this->clusters[c]) {
+            vector<int> cluster = this->clusters[c]->getCluster();
+            for (int number : cluster) {
+                x = (c << w_) | number;
+                elements.push_back(x);
+            }
+        }
+    }
+    return elements;
+}
+
+void VEBTree::print(const string &prefix) {
     cout << prefix << "[u = " << this->universe_size << ", w = " << this->w << ", min = " << this->min;
     if (this->resumo) {
         cout << endl;
         cout << prefix << "  Resumo: " << endl;
-        this->resumo->Imprimir(prefix + "    ");
+        this->resumo->print(prefix + "    ");
         for (int i = 0; i < this->number_clusters; i++) {
             if (this->clusters[i]) {
                 cout << prefix << "  Cluster " << i << ": " << endl;
-                this->clusters[i]->Imprimir(prefix + "    ");
+                this->clusters[i]->print(prefix + "    ");
             }
         }
         cout << prefix << "]" << endl;
@@ -185,8 +220,9 @@ int main() {
     vebtree.Incluir(9);
 
     cout << "Árvore VanEmdeBoas: " << endl;
-    vebtree.Imprimir("");
-
+    vebtree.print("");
+    vebtree.Imprimir();
+    
     //vebtree.Remover(0);
     //vebtree.Remover(1);
     //vebtree.Remover(2);
@@ -195,6 +231,7 @@ int main() {
     vebtree.Remover(9);
 
     cout << "Árvore VanEmdeBoas: " << endl;
-    vebtree.Imprimir("");
+    vebtree.print("");
+    vebtree.Imprimir();
     return 0;
 }
