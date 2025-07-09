@@ -29,8 +29,8 @@ class VEBTree {
 
         void Incluir(int x);
         void Remover(int x);
-        void Predecessor(int x);
-        void Sucessor(int x);
+        int Predecessor(int x);
+        int Sucessor(int x);
         void Imprimir();
         void print(const string &prefix);
         vector<int> getCluster();
@@ -49,7 +49,7 @@ class VEBTree {
 };
 
 void VEBTree::Incluir(int x) {
-    cout << "Inserindo valor " << x << endl;
+    //cout << "Inserindo valor " << x << endl;
     //cout << "passo 1" << endl;
     if (this->min == None) {
         //cout << "passo 2" << endl;
@@ -92,9 +92,9 @@ void VEBTree::Incluir(int x) {
 }
 
 void VEBTree::Remover(int x) {
-    cout << "Removendo valor " << x << ", Universo " << this->universe_size << endl;
+    //cout << "Removendo valor " << x << ", Universo " << this->universe_size << endl;
     if (this->universe_size <= 2) {
-        cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl;
+        //cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl;
         if (x == this->min) {
             if (this->min == this->max) this->min = None;
             else this->min = this->max;
@@ -104,55 +104,135 @@ void VEBTree::Remover(int x) {
     int w_ = this->w >> 1;
     int c = x >> w_;
     int i = x & ((1 << w_) - 1);
-    cout << w_ << " " << c << " " << i << endl;
+    //cout << w_ << " " << c << " " << i << endl;
     if (x == this->min) {
-        cout << "passo 2, valor " << x << ", Universo " << this->universe_size << endl;
+        //cout << "passo 2, valor " << x << ", Universo " << this->universe_size << endl;
         if(this->resumo) {
             c = this->resumo->min;
             if (c == None) {
-                cout << "passo 3, valor " << x << ", Universo " << this->universe_size << endl;
+                //cout << "passo 3, valor " << x << ", Universo " << this->universe_size << endl;
                 this->min = None;
                 return;
             }
-            cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
+            //cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
             i = this->clusters[c]->min;
             x = (c << w_) | i;
             this->min = x;
         } else this->min = None;
     }
-    cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl;
+    //cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl;
     if (this->clusters[c]) {
-        cout << "passo 6, valor " << x << ", Universo " << this->universe_size << endl;
-        cout << endl;
+        //cout << "passo 6, valor " << x << ", Universo " << this->universe_size << endl;
+        //cout << endl;
         this->clusters[c]->Remover(i);
-        cout << endl;
-        cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
+        //cout << endl;
+        //cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
         if (this->clusters[c]->min == None) {
-            cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
+            //cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
             free(this->clusters[c]);
             this->clusters[c] = NULL;
-            cout << endl;
+            //cout << endl;
             this->resumo->Remover(c);
-            cout << endl;
-            cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl;
+            //cout << endl;
+            //cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl;
         }
     }
-    cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
+    //cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
     if (this->resumo) {
         if (this->resumo->min == None) {
-            cout << "passo 11, valor " << x << ", Universo " << this->universe_size << endl;
+            //cout << "passo 11, valor " << x << ", Universo " << this->universe_size << endl;
             free(this->resumo);
             this->resumo = NULL;
             this->max = this->min;
         } else {
-            cout << "passo 13, valor " << x << ", Universo " << this->universe_size << endl;
+            //cout << "passo 13, valor " << x << ", Universo " << this->universe_size << endl;
             int c_ = this->resumo->max;
             int i_ = this->clusters[c_]->max;
             int x_ = (c_ << w_) | i_;
             this->max = x_;
         }
     }
-    cout << "passo 14, valor " << x << ", Universo " << this->universe_size << endl;
+    //cout << "passo 14, valor " << x << ", Universo " << this->universe_size << endl;
+}
+
+int VEBTree::Sucessor(int x) {
+    //cout << "Pegando sucessor de " << x << ", Universo " << this->universe_size << endl;
+    if (this->min == None || x >= this->max) {
+        //cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl; 
+        return -1;
+    }
+    if (x < this->min) {
+        //cout << "passo 2, valor " << x << ", Universo " << this->universe_size << endl;
+        return this->min;
+    }
+    if (this->universe_size <= 2) return this->max;
+    //cout << "passo 3, valor " << x << ", Universo " << this->universe_size << endl;
+    int w_ = this->w >> 1;
+    int c = x >> w_;
+    int i = x & ((1 << w_) - 1);
+    int x_, i_;
+    if (this->clusters[c] && i < this->clusters[c]->max) {
+        //cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
+        i_ = this->clusters[c]->Sucessor(i);
+        if (i_ == None) {
+            //cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl; 
+            return i_;
+        }
+        x_ = (c << w_) | i_;
+        //cout << "passo 6, valor " << x << ", Universo " << this->universe_size << endl;
+        return x_;
+    }
+    //cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
+    int c_ = this->resumo->Sucessor(c);
+    //cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
+    if (c_ == None) {
+        //cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl; 
+        return c_;
+    }
+    i_ = this->clusters[c_]->min;
+    x_ = (c_ << w_) | i_;
+    //cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
+    return x_;
+}
+
+int VEBTree::Predecessor(int x) {
+    //cout << "Pegando sucessor de " << x << ", Universo " << this->universe_size << endl;
+    if (this->max == None || x <= this->min) {
+        //cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl; 
+        return -1;
+    }
+    if (x > this->max) {
+        //cout << "passo 2, valor " << x << ", Universo " << this->universe_size << endl;
+        return this->max;
+    }
+    if (this->universe_size <= 2) return this->min;
+    //cout << "passo 3, valor " << x << ", Universo " << this->universe_size << endl;
+    int w_ = this->w >> 1;
+    int c = x >> w_;
+    int i = x & ((1 << w_) - 1);
+    int x_, i_;
+    if (this->clusters[c] && i < this->clusters[c]->max) {
+        //cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
+        i_ = this->clusters[c]->Sucessor(i);
+        if (i_ == None) {
+            //cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl; 
+            return i_;
+        }
+        x_ = (c << w_) | i_;
+        //cout << "passo 6, valor " << x << ", Universo " << this->universe_size << endl;
+        return x_;
+    }
+    //cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
+    int c_ = this->resumo->Sucessor(c);
+    //cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
+    if (c_ == None) {
+        //cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl; 
+        return c_;
+    }
+    i_ = this->clusters[c_]->min;
+    x_ = (c_ << w_) | i_;
+    //cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
+    return x_;
 }
 
 void VEBTree::Imprimir() {
@@ -192,7 +272,7 @@ vector<int> VEBTree::getCluster() {
 }
 
 void VEBTree::print(const string &prefix) {
-    cout << prefix << "[u = " << this->universe_size << ", w = " << this->w << ", min = " << this->min;
+    cout << prefix << "[u = " << this->universe_size << ", w = " << this->w << ", min = " << this->min << ", max = " << this->max;
     if (this->resumo) {
         cout << endl;
         cout << prefix << "  Resumo: " << endl;
@@ -222,16 +302,24 @@ int main() {
     cout << "Árvore VanEmdeBoas: " << endl;
     vebtree.print("");
     vebtree.Imprimir();
-    
+    cout << endl;
+
     //vebtree.Remover(0);
     //vebtree.Remover(1);
     //vebtree.Remover(2);
     //vebtree.Remover(7);
     //vebtree.Remover(8);
-    vebtree.Remover(9);
+    //vebtree.Remover(9);
 
     cout << "Árvore VanEmdeBoas: " << endl;
     vebtree.print("");
     vebtree.Imprimir();
+    cout << endl;
+
+    int x = 8;
+    int y = vebtree.Sucessor(x);
+    if (y != None) cout << "Sucessor de " << x << " é " << y << endl;
+    else cout << "Sem Sucessor" << endl;
+
     return 0;
 }
