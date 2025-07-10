@@ -2,9 +2,6 @@
 #include <optional>
 #include <iomanip>
 #include <cmath>
-#include <set>
-#include <random>
-#include <ctime>
 #include <fstream> 
 #include <string>
 #include <vector>
@@ -28,7 +25,7 @@ class VEBTree {
         void Remover(long x);
         long Predecessor(long x);
         long Sucessor(long x);
-        void Imprimir();
+        void Imprimir(ofstream& Output);
         void print(const string &prefix);
         vector<long> getCluster();
 
@@ -232,18 +229,26 @@ long VEBTree::Predecessor(long x) {
     return x_;
 }
 
-void VEBTree::Imprimir() {
+void VEBTree::Imprimir(ofstream& Output) {
+    Output << "Min: " << this->min;
     cout << "Min: " << this->min;
     for (long i = 0; i < this->number_clusters; i++) {
         if (this->clusters[i]) {
+            Output << ", C[" << i << "]:";
             cout << ", C[" << i << "]:";
             vector<long> elements = this->clusters[i]->getCluster();
             for (long j = 0; j < elements.size(); j++) {
-                if (j != 0) cout << ", " << elements[j];
-                else cout << " " << elements[j];
+                if (j != 0) {
+                    Output << ", " << elements[j];
+                    cout << ", " << elements[j];
+                } else {
+                    Output << " " << elements[j];
+                    cout << " " << elements[j];
+                }
             }
         }
     }
+    Output << endl;
     cout << endl;
 }
 
@@ -284,54 +289,67 @@ void VEBTree::print(const string &prefix) {
     } else cout << "]" << endl;
 }
 
-int main() {
+int main(int argc, char** argv) {
+
+    if (argc <= 0) {
+        cout << "Nenhum argumento passado. Por favor tente novamente passe o arquivo de txt como entrada." << endl;
+        return 1;
+    }
+
+    string filename = argv[1];
+    string line;
+
+    ofstream Output("saida.txt");
+
+    ifstream MyFile(filename);
+    if (!MyFile.is_open()) {
+        cout << "Não foi possivel abrir o arquivo indicado." << endl;
+        return 1;
+    }
+
     VEBTree vebtree = VEBTree(U);
 
-    cout << "Tudo certo!" << endl;
+    while (getline(MyFile, line)) {
+        stringstream ss(line);
+        string command;
+        long n;
+        if (ss >> command >> n) {
+            if (command == "INC") {
+                // INSERIR
+                Output << line << endl;
+                cout << line << endl;
+                vebtree.Incluir(n);
+            } else if (command == "REM") {
+                // REMOVER
+                Output << line << endl;
+                cout << line << endl;
+                vebtree.Remover(n);
+            } else if (command == "SUC") {
+                // SUCESSOR
+                Output << line << endl;
+                cout << line << endl;
+                long s = vebtree.Sucessor(n);
+                if (s != -1) Output << s << endl;
+                else Output << "Não tem sucessor" << endl;
+            } else if (command == "PRE") {
+                // SUCESSOR
+                Output << line << endl;
+                cout << line << endl;
+                long p = vebtree.Predecessor(n);
+                if (p != -1) Output << p << endl;
+                else Output << "Não tem predecessor" << endl;
+            }
+        } else if (command == "IMP") {
+            // IMPRIMIR
+            Output << line << endl;
+            cout << line << endl;
+            vebtree.print("");
+            vebtree.Imprimir(Output);
+        }
+    }
 
-    /* vebtree.Incluir(0);
-    vebtree.Incluir(1);
-    vebtree.Incluir(2);
-    vebtree.Incluir(7);
-    vebtree.Incluir(8);
-    vebtree.Incluir(9);
-    vebtree.Incluir(13);
-    vebtree.Incluir(15); */
-
-    vebtree.Incluir(102);
-    vebtree.Incluir(268);
-    vebtree.Incluir(322);
-    vebtree.Incluir(14756);
-    vebtree.Incluir(197064);
-    vebtree.Incluir(197336);
-    vebtree.Incluir(196760);
-    vebtree.Incluir(4294901760);
-    vebtree.Incluir(4294967295);
-
-    cout << "Árvore VanEmdeBoas: " << endl;
-    vebtree.print("");
-    vebtree.Imprimir();
-    cout << endl;
-
-    //vebtree.Remover(0);
-    //vebtree.Remover(1);
-    //vebtree.Remover(2);
-    //vebtree.Remover(7);
-    //vebtree.Remover(8);
-    //vebtree.Remover(9);
-    vebtree.Remover(197336);
-
-    cout << "Árvore VanEmdeBoas: " << endl;
-    vebtree.print("");
-    vebtree.Imprimir();
-    cout << endl;
+    MyFile.close();
+    Output.close();
     
-    long x = 5000000;
-    long y = vebtree.Sucessor(x);
-    if (y != None) cout << "Sucessor de " << x << " é " << y << endl;
-    else cout << "Sem Sucessor" << endl;
-    long z = vebtree.Predecessor(x);
-    if (z != None) cout << "Predecessor de " << x << " é " << z << endl;
-    else cout << "Sem Predecessor" << endl;
     return 0;
 }
