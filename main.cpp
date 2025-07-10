@@ -196,8 +196,8 @@ int VEBTree::Sucessor(int x) {
 }
 
 int VEBTree::Predecessor(int x) {
-    //cout << "Pegando sucessor de " << x << ", Universo " << this->universe_size << endl;
-    if (this->max == None || x <= this->min) {
+    //cout << "Pegando predecessor de " << x << ", Universo " << this->universe_size << endl;
+    if (this->min == None || x <= this->min) {
         //cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl; 
         return -1;
     }
@@ -211,9 +211,9 @@ int VEBTree::Predecessor(int x) {
     int c = x >> w_;
     int i = x & ((1 << w_) - 1);
     int x_, i_;
-    if (this->clusters[c] && i < this->clusters[c]->max) {
+    if (this->clusters[c] && i > this->clusters[c]->min) {
         //cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
-        i_ = this->clusters[c]->Sucessor(i);
+        i_ = this->clusters[c]->Predecessor(i);
         if (i_ == None) {
             //cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl; 
             return i_;
@@ -223,13 +223,13 @@ int VEBTree::Predecessor(int x) {
         return x_;
     }
     //cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
-    int c_ = this->resumo->Sucessor(c);
+    int c_ = this->resumo->Predecessor(c);
     //cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
     if (c_ == None) {
         //cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl; 
-        return c_;
+        return this->min;
     }
-    i_ = this->clusters[c_]->min;
+    i_ = this->clusters[c_]->max;
     x_ = (c_ << w_) | i_;
     //cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
     return x_;
@@ -316,10 +316,12 @@ int main() {
     vebtree.Imprimir();
     cout << endl;
 
-    int x = 8;
+    int x = 10;
     int y = vebtree.Sucessor(x);
     if (y != None) cout << "Sucessor de " << x << " é " << y << endl;
     else cout << "Sem Sucessor" << endl;
-
+    int z = vebtree.Predecessor(x);
+    if (z != None) cout << "Predecessor de " << x << " é " << z << endl;
+    else cout << "Sem Predecessor" << endl;
     return 0;
 }
