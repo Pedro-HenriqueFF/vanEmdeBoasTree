@@ -155,7 +155,6 @@ class VEBTree {
 };
 
 void VEBTree::Incluir(long x) {
-    cout << "Inserindo valor " << x << ", Universo " << this->universe_size << endl;
     if (this->min == None) {
         this->min = x;
         this->max = this->min;
