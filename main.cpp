@@ -39,7 +39,7 @@ class HashTable {
         long inserirChave(long k, VEBTree* tree);
         long removerChave(long k);
         std::pair<long, Node*> buscarChave(long k);
-        void tableChanging(long ratio);
+        void tableChanging(float ratio);
         void tableDoubling();
         void tableHalving();
 
@@ -47,6 +47,7 @@ class HashTable {
             this->table_size = initial_size;
             this->number_clusters = 0;
             this->clusters = (struct Node**)malloc(sizeof(struct Node*) * initial_size);
+            this->clusters[0] = NULL, this->clusters[1] = NULL;
         }
 };
 
@@ -55,7 +56,6 @@ long HashTable::hashFunction(long k) {
 }
 
 long HashTable::inserirChave(long k, VEBTree* tree) {
-    cout << "Table size: " << this->table_size << endl;
     Node* newNode = new Node(tree);
     newNode->key = k;
     long index = this->hashFunction(k);
@@ -65,7 +65,7 @@ long HashTable::inserirChave(long k, VEBTree* tree) {
         this->clusters[index] = newNode;
     }
     this->number_clusters += 1;
-    if (number_clusters / table_size >= 0.75) this->tableDoubling();
+    if (this->number_clusters / this->table_size >= 0.75) this->tableDoubling();
     return index;
 }
 
@@ -75,11 +75,11 @@ long HashTable::removerChave(long k) {
     struct Node* currNode = this->clusters[index];
     while (currNode != NULL) {
         if (k == currNode->key) {
-            if (currNode == this->clusters[index]) this->clusters[index] = currNode->next;
+            if (currNode == this->clusters[index]) this->clusters[index] = NULL;
             else prevNode->next = currNode->next;
             free(currNode);
             this->number_clusters -= 1;
-            if (number_clusters / table_size <= 0.25) this->tableHalving();
+            if (this->table_size > 2 && this->number_clusters / this->table_size <= 0.25) this->tableHalving();
             break;
         }
         prevNode = currNode;
@@ -93,7 +93,6 @@ std::pair<long, Node*> HashTable::buscarChave(long k) {
     struct Node* bucketHead = this->clusters[index];
     while (bucketHead != NULL) {
         if (bucketHead->key == k) {
-            //cout << index << " " << bucketHead->pointer << endl;
             return std::pair<long, Node*> {index, bucketHead};
         }
         bucketHead = bucketHead->next;
@@ -101,10 +100,12 @@ std::pair<long, Node*> HashTable::buscarChave(long k) {
     return std::pair<long, Node*> {-1, bucketHead};
 }
 
-void HashTable::tableChanging(long ratio) {
-    Node** newTable = (struct Node**)malloc(sizeof(struct Node*) * long(this->table_size * ratio));
+void HashTable::tableChanging(float ratio) {
+    Node** newTable = (struct Node**)malloc(sizeof(struct Node*) * this->table_size * ratio);
+    for (auto i = 0; i < this->table_size * ratio; i++) newTable[i] = NULL;
     Node** oldTable = this->clusters;
     long aux = this->table_size;
+    this->number_clusters = 0;
     this->table_size = long(this->table_size * ratio);
     this->clusters = newTable;
     for (long i = 0; i < aux; i++) {
@@ -117,11 +118,11 @@ void HashTable::tableChanging(long ratio) {
 }
 
 void HashTable::tableDoubling() {
-    this->tableChanging(long(2));
+    this->tableChanging(2);
 }
 
 void HashTable::tableHalving() {
-    this->tableChanging(long(0.5));
+    this->tableChanging(0.5);
 }
 
 class VEBTree {
@@ -155,63 +156,38 @@ class VEBTree {
 
 void VEBTree::Incluir(long x) {
     cout << "Inserindo valor " << x << ", Universo " << this->universe_size << endl;
-    //cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl;
     if (this->min == None) {
-        //cout << "passo 2, valor " << x << ", Universo " << this->universe_size << endl;
         this->min = x;
         this->max = this->min;
     } else {
-        //cout << "passo 3, valor " << x << ", Universo " << this->universe_size << endl;
         if (x < this->min) {
-            //cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
             long aux = this->min;
             this->min = x;
             x = aux;
         }
-        //cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl;
         if (x > this->max) {
-            //cout << "passo 6, valor " << x << ", Universo " << this->universe_size << endl;
             this->max = x;
         }
         if (this->universe_size > 2) {
             long w_ = this->w >> 1;
             long c = x >> w_;   
             long i = x & ((1 << w_) - 1);
-            //cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
-            //cout << w_ << " " << c << " " << i << endl;
             std::pair<long, Node*> cluster = this->clusters.buscarChave(c);
             if (cluster.first == -1) {
-                //cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
                 if (!this->resumo) this->resumo = new VEBTree(sqrt(this->universe_size));
-                //cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl;
                 this->resumo->Incluir(c);
-                //cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
-            }
-            //cout << "passo 11, valor " << x << ", Universo " << this->universe_size << endl;
-            if (cluster.second == NULL) {
-                //cout << "passo 12, valor " << x << ", Universo " << this->universe_size << endl;
-                //cout << sqrt(this->universe_size) << endl;
-                //VEBTree* new_cluster = new VEBTree(sqrt(this->universe_size));
                 this->clusters.inserirChave(c, new VEBTree(sqrt(this->universe_size)));
                 cluster = this->clusters.buscarChave(c);
-                //cout << cluster.first << " " << cluster.second->pointer << endl;
-                //cout << "passo 13, valor " << x << ", Universo " << this->universe_size << endl;
             }
-            //cout << cluster.first << " " << cluster.second->pointer << endl;
-            //cout << "passo 14, valor " << x << ", Universo " << this->universe_size << endl;
-
             cluster.second->pointer->Incluir(i);
-            //cout << "passo 15, valor " << x << ", Universo " << this->universe_size << endl;
         }
     }
 }
 
-/* void VEBTree::Remover(long x) {
-    //cout << "Removendo valor " << x << ", Universo " << this->universe_size << endl;
+void VEBTree::Remover(long x) {
     if (this->universe_size <= 2) {
-        //cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl;
         if (x == this->min) {
-            if (this->min == this->max) this->min = None;
+            if (this->min == this->max) this->min = None, this->max = None;
             else this->min = this->max;
         } else this->max = None;
         return;
@@ -219,137 +195,105 @@ void VEBTree::Incluir(long x) {
     long w_ = this->w >> 1;
     long c = x >> w_;
     long i = x & ((1 << w_) - 1);
-    //cout << w_ << " " << c << " " << i << endl;
+    std::pair<long, Node*> cluster;
     if (x == this->min) {
-        //cout << "passo 2, valor " << x << ", Universo " << this->universe_size << endl;
         if(this->resumo) {
             c = this->resumo->min;
             if (c == None) {
-                //cout << "passo 3, valor " << x << ", Universo " << this->universe_size << endl;
                 this->min = None;
                 return;
             }
-            //cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
-            i = this->clusters[c]->min;
+            cluster = this->clusters.buscarChave(c);
+            i = cluster.second->pointer->min;
             x = (c << w_) | i;
             this->min = x;
-        } else this->min = None;
+        } else this->min = None, this->max = None;
     }
-    //cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl;
-    if (this->clusters[c]) {
-        //cout << "passo 6, valor " << x << ", Universo " << this->universe_size << endl;
-        //cout << endl;
-        this->clusters[c]->Remover(i);
-        //cout << endl;
-        //cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
-        if (this->clusters[c]->min == None) {
-            //cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
-            free(this->clusters[c]);
-            this->clusters[c] = NULL;
-            //cout << endl;
+    cluster = this->clusters.buscarChave(c);
+    if (cluster.first != -1) {
+        cluster.second->pointer->Remover(i);
+        if (cluster.second->pointer->min == None) {
+            this->clusters.removerChave(c);
             this->resumo->Remover(c);
-            //cout << endl;
-            //cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl;
         }
     }
-    //cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
     if (this->resumo) {
         if (this->resumo->min == None) {
-            //cout << "passo 11, valor " << x << ", Universo " << this->universe_size << endl;
             free(this->resumo);
             this->resumo = NULL;
             this->max = this->min;
         } else {
-            //cout << "passo 13, valor " << x << ", Universo " << this->universe_size << endl;
             long c_ = this->resumo->max;
-            long i_ = this->clusters[c_]->max;
+            cluster = this->clusters.buscarChave(c_);
+            long i_ = cluster.second->pointer->max;
             long x_ = (c_ << w_) | i_;
             this->max = x_;
         }
     }
-    //cout << "passo 14, valor " << x << ", Universo " << this->universe_size << endl;
 }
 
 long VEBTree::Sucessor(long x) {
-    //cout << "Pegando sucessor de " << x << ", Universo " << this->universe_size << endl;
     if (this->min == None || x >= this->max) {
-        //cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl; 
         return -1;
     }
     if (x < this->min) {
-        //cout << "passo 2, valor " << x << ", Universo " << this->universe_size << endl;
         return this->min;
     }
     if (this->universe_size <= 2) return this->max;
-    //cout << "passo 3, valor " << x << ", Universo " << this->universe_size << endl;
     long w_ = this->w >> 1;
     long c = x >> w_;
     long i = x & ((1 << w_) - 1);
     long x_, i_;
-    if (this->clusters[c] && i < this->clusters[c]->max) {
-        //cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
-        i_ = this->clusters[c]->Sucessor(i);
+    std::pair<long, Node*> cluster = this->clusters.buscarChave(c);
+    if (cluster.second != NULL && i < cluster.second->pointer->max) {
+        i_ = cluster.second->pointer->Sucessor(i);
         if (i_ == None) {
-            //cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl; 
             return i_;
         }
         x_ = (c << w_) | i_;
-        //cout << "passo 6, valor " << x << ", Universo " << this->universe_size << endl;
         return x_;
     }
-    //cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
     long c_ = this->resumo->Sucessor(c);
-    //cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
     if (c_ == None) {
-        //cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl; 
         return c_;
     }
-    i_ = this->clusters[c_]->min;
+    cluster = this->clusters.buscarChave(c_);
+    i_ = cluster.second->pointer->min;
     x_ = (c_ << w_) | i_;
-    //cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
     return x_;
 }
 
 long VEBTree::Predecessor(long x) {
-    //cout << "Pegando predecessor de " << x << ", Universo " << this->universe_size << endl;
     if (this->min == None || x <= this->min) {
-        //cout << "passo 1, valor " << x << ", Universo " << this->universe_size << endl; 
         return -1;
     }
     if (x > this->max) {
-        //cout << "passo 2, valor " << x << ", Universo " << this->universe_size << endl;
         return this->max;
     }
     if (this->universe_size <= 2) return this->min;
-    //cout << "passo 3, valor " << x << ", Universo " << this->universe_size << endl;
     long w_ = this->w >> 1;
     long c = x >> w_;
     long i = x & ((1 << w_) - 1);
     long x_, i_;
-    if (this->clusters[c] && i > this->clusters[c]->min) {
-        //cout << "passo 4, valor " << x << ", Universo " << this->universe_size << endl;
-        i_ = this->clusters[c]->Predecessor(i);
+    std::pair<long, Node*> cluster = this->clusters.buscarChave(c);
+    if (cluster.second != NULL && i > cluster.second->pointer->min) {
+        i_ = cluster.second->pointer->Predecessor(i);
         if (i_ == None) {
-            //cout << "passo 5, valor " << x << ", Universo " << this->universe_size << endl; 
             return i_;
         }
         x_ = (c << w_) | i_;
-        //cout << "passo 6, valor " << x << ", Universo " << this->universe_size << endl;
         return x_;
     }
-    //cout << "passo 7, valor " << x << ", Universo " << this->universe_size << endl;
     long c_ = this->resumo->Predecessor(c);
-    //cout << "passo 8, valor " << x << ", Universo " << this->universe_size << endl;
     if (c_ == None) {
-        //cout << "passo 9, valor " << x << ", Universo " << this->universe_size << endl; 
         return this->min;
     }
-    i_ = this->clusters[c_]->max;
+    cluster = this->clusters.buscarChave(c_);
+    i_ = cluster.second->pointer->max;
     x_ = (c_ << w_) | i_;
-    //cout << "passo 10, valor " << x << ", Universo " << this->universe_size << endl;
     return x_;
 }
- */
+
 void VEBTree::Imprimir(ofstream& Output) {
     if (this->min == None) {
         cout << "Arvore vazia" << endl;
@@ -420,12 +364,6 @@ void VEBTree::print(const string &prefix) {
 
 int main(int argc, char** argv) {
 
-    /* auto hashTable = new HashTable();
-    hashTable->inserirChave(1, (VEBTree*)0x1);
-    hashTable->inserirChave(2, (VEBTree*)0x2);
-    cout << hashTable->buscarChave(1).second->pointer << endl;
-    return 0; */
-
     if (argc <= 0) {
         cout << "Nenhum argumento passado. Por favor tente novamente passe o arquivo de txt como entrada." << endl;
         return 1;
@@ -454,7 +392,7 @@ int main(int argc, char** argv) {
                 Output << line << endl;
                 cout << line << endl;
                 vebtree.Incluir(n);
-            } /* else if (command == "REM") {
+            } else if (command == "REM") {
                 // REMOVER
                 Output << line << endl;
                 cout << line << endl;
@@ -473,7 +411,7 @@ int main(int argc, char** argv) {
                 long p = vebtree.Predecessor(n);
                 if (p != -1) Output << p << endl;
                 else Output << "Não tem predecessor" << endl;
-            } */
+            }
         } else if (command == "IMP") {
             // IMPRIMIR
             Output << line << endl;
